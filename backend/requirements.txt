@@ -17,7 +17,7 @@ pypdfium2==4.30.0  # Latest version with wheel support
 
 # AI
 openai==1.3.7
-tiktoken==0.5.1  # Use this version for wheel compatibility (no Rust)
+tiktoken==0.9  # Use this version for wheel compatibility (no Rust)
 
 # Supabase (compatible httpx)
 supabase==2.0.2
