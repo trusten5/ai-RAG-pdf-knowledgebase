@@ -93,6 +93,12 @@ Source material:
         if history:
             for turn in history:
                 history_str += f"{turn['role'].capitalize()}: {turn['content']}\n"
+        history_info = ""
+        if history:
+            history_info = (
+                "Here is the chat so far, only utilize if user directly mentions it in their message:\n"
+                + history_str
+            )
 
         prompt = f"""
 You are a helpful, knowledgeable assistant for strategy consultants. 
@@ -103,7 +109,7 @@ Here is the current working summary (Markdown):
 
 {summary}
 
-{('Here is the chat so far, only utilize if user directly mentions it in their message:\n' + history_str) if history else ''}
+{history_info}
 
 User's request or question:
 {user_message}
@@ -152,11 +158,12 @@ Return only the most helpful, relevant response, and only use outside informatio
         return response.choices[0].message.content.strip()
 
     def generate_slide_bullets(self, summary: str, user_instruction: str = "") -> str:
+        user_req = f"The user wants: {user_instruction}" if user_instruction else ""
         prompt = f"""
 You are a senior strategy consultant building professional, presentation-ready, and in-depth slides for an executive presentation. 
 Your job is to turn the following summary into a clean set of slide-ready bullets, based on the user instruction.
 
-{f"The user wants: {user_instruction}" if user_instruction else ""}
+{user_req}
 
 Instructions:
 1. Create slides sections, each with a clear title (start with ## Title).
@@ -182,6 +189,12 @@ Here is the summary:
         if history:
             for turn in history:
                 history_str += f"{turn['role'].capitalize()}: {turn['content']}\n"
+        history_info = ""
+        if history:
+            history_info = (
+                "Here is the chat so far, only utilize if user directly mentions it in their message:\n"
+                + history_str
+            )
 
         prompt = f"""
 You are a consulting presentation assistant. Your job is to **edit, refine, or answer questions about consulting slide bullets** (not document summaries).
@@ -190,7 +203,7 @@ Here is the current working set of slide bullets (in Markdown):
 
 {slide_bullets}
 
-{('Here is the chat so far, only utilize if user directly mentions it in their message:\n' + history_str) if history else ''}
+{history_info}
 
 User's request or question:
 {user_message}
@@ -236,10 +249,9 @@ Instructions:
             for turn in history:
                 messages.insert(-1, {"role": turn['role'], "content": turn['content']})
         response = client.chat.completions.create(
-        model=self.model,
-        messages=messages
-    )
-
+            model=self.model,
+            messages=messages
+        )
         return response.choices[0].message.content.strip()
 
     def ask_thrust_global(self, context_text: str, user_message: str, history: list = None) -> str:
