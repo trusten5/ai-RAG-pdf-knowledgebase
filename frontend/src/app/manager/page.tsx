@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import AskThrustPanel from "@/components/AskThrustPanel";
 
@@ -17,7 +18,7 @@ interface Project {
 
 export default function ManagerPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +61,7 @@ export default function ManagerPage() {
 
   async function handleCreateProject(e: React.FormEvent) {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || !user) return;
     setCreating(true);
     setError(null);
 

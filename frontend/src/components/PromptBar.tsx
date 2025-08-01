@@ -21,7 +21,6 @@ interface PromptBarProps {
 export default function PromptBar({
   userId,
   projectId,
-  onResult,
   onSubmitUser,
   onSummaryStart,
   onSummaryResult,
@@ -49,10 +48,10 @@ export default function PromptBar({
       onSummaryStart?.();
 
       // 1. Upload PDF to Supabase Storage bucket
-      const fileExt = file.name.split('.').pop();
+
       const filePath = `uploads/${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from("documents")
         .upload(filePath, file, {
           cacheControl: "3600",
@@ -79,7 +78,7 @@ export default function PromptBar({
       }
 
       // 3. Call summarization endpoint with all required metadata
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         file_url: signedUrlData?.signedUrl,
         user_id: userId,
         project_id: projectId,
@@ -133,7 +132,7 @@ export default function PromptBar({
 
     setLoading(true);
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         user_id: userId,
         project_id: projectId,
       };
@@ -142,14 +141,14 @@ export default function PromptBar({
 
       console.log("[PromptBar] Sending payload to /api/summarize/ (text):", payload);
 
-      const { data } = await axios.post(`${apiBase}/api/summarize/`, payload);
+      const response = await axios.post(`${apiBase}/api/summarize/`, payload);
 
-      console.log("[PromptBar] Response from /api/summarize/ (text):", data);
+      console.log("[PromptBar] Response from /api/summarize/ (text):", response.data);
 
       onSummaryResult?.(
-        data.summary_markdown,
-        data.executive_summary,
-        data.id
+        response.data.summary_markdown,
+        response.data.executive_summary,
+        response.data.id
       );
       setInput("");
       setFilename(null);

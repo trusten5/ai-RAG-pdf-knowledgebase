@@ -183,7 +183,7 @@ const AskThrustPanel = forwardRef<AskThrustPanelHandle, AskThrustPanelProps>(
         return;
       }
       const tableName = mode === "global" ? "thrust_chats_global" : "thrust_chats";
-      let row: any = {
+      const row: Record<string, unknown> = {
         id: uuidv4(),
         user_id: activeUserId,
         chat_id: activeChatId,
@@ -219,8 +219,8 @@ const AskThrustPanel = forwardRef<AskThrustPanelHandle, AskThrustPanelProps>(
       }
 
       try {
-        let apiRoute = mode === "global" ? "/api/ask_thrust_global/" : "/api/ask_thrust/";
-        let body: any = { message: input, history: [...chatHistory, userMsg] };
+        const apiRoute = mode === "global" ? "/api/ask_thrust_global/" : "/api/ask_thrust/";
+        const body: Record<string, unknown> = { message: input, history: [...chatHistory, userMsg] };
         if (mode === "project") body.project_id = projectId;
         else body.user_id = activeUserId;
 
@@ -233,7 +233,7 @@ const AskThrustPanel = forwardRef<AskThrustPanelHandle, AskThrustPanelProps>(
         };
         setChatHistory((prev) => [...prev, assistantMsg]);
         await storeMessage("assistant", data.response);
-      } catch (err: any) {
+      } catch (err: unknown) {
         const errorMsg = {
           id: uuidv4(),
           chat_id: activeChatId,
@@ -243,7 +243,7 @@ const AskThrustPanel = forwardRef<AskThrustPanelHandle, AskThrustPanelProps>(
         setChatHistory((prev) => [...prev, errorMsg]);
         await storeMessage("assistant", errorMsg.content);
 
-        setInsertError("LLM/Backend error: " + (err?.message || "Unknown error"));
+        setInsertError("LLM/Backend error: " + ((err as Error)?.message || "Unknown error"));
       } finally {
         setInput("");
         setLoading(false);
@@ -347,11 +347,11 @@ const AskThrustPanel = forwardRef<AskThrustPanelHandle, AskThrustPanelProps>(
                 {mode === "global"
                   ? <>
                       Ask questions about any brief, summary, slide, or insight across <b>all your projects</b>.<br />
-                      Example: <span className="text-accent">"Which projects mention cybersecurity?"</span>
+                      Example: <span className="text-accent">&ldquo;Which projects mention cybersecurity?&rdquo;</span>
                     </>
                   : <>
                       Ask questions about any brief, executive summary, slide bullet, or insight in this project.<br />
-                      Example: <span className="text-accent">"What are the main cost drivers in this project?"</span>
+                      Example: <span className="text-accent">&ldquo;What are the main cost drivers in this project?&rdquo;</span>
                     </>
                 }
               </div>
@@ -399,8 +399,8 @@ const AskThrustPanel = forwardRef<AskThrustPanelHandle, AskThrustPanelProps>(
               onKeyDown={e => e.key === "Enter" && !loading && handleSend()}
               className="flex-1 px-3 py-2 rounded-lg border border-muted bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition"
               placeholder={mode === "global"
-                ? "Ask about anything across all your projects…"
-                : "Ask about any brief, section, or trend…"}
+                ? "Ask about anything across all your projects&hellip;"
+                : "Ask about any brief, section, or trend&hellip;"}
               style={{
                 backgroundColor: "var(--background)",
                 color: "var(--foreground)",

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 
@@ -57,14 +58,14 @@ export default function ProjectDashboard() {
     ? params.projectId[0]
     : params.projectId;
 
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [briefs, setBriefs] = useState<Brief[]>([]);
   const [activeBriefId, setActiveBriefId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [accepting, setAccepting] = useState(false);
-  const [creating, setCreating] = useState(false);
+
 
   const [activeTab, setActiveTab] = useState<"summary" | "bullets">("summary");
   const [bulletsPrompt, setBulletsPrompt] = useState("");
@@ -124,7 +125,7 @@ export default function ProjectDashboard() {
 
   const createNewBrief = async () => {
     if (!projectId || !user) return;
-    setCreating(true);
+
     const { data, error } = await supabase
       .from("briefs")
       .insert([
@@ -158,7 +159,6 @@ export default function ProjectDashboard() {
       setActiveTab("summary");
       refreshAskThrustIfActive();
     }
-    setCreating(false);
   };
 
   const deleteBrief = async (id: string) => {
@@ -237,7 +237,7 @@ export default function ProjectDashboard() {
     if (!activeBrief || !activeBrief.pendingEdit) return;
     setAccepting(true);
 
-    let updatedBrief: Brief = { ...activeBrief, pendingEdit: null };
+    const updatedBrief: Brief = { ...activeBrief, pendingEdit: null };
 
     if (activeBrief.pendingEdit.type === "executive") {
       updatedBrief.executive_summary = activeBrief.previewExecutiveSummary || activeBrief.executive_summary;
@@ -251,7 +251,7 @@ export default function ProjectDashboard() {
       updatedBrief.slideBullets = activeBrief.previewSlideBullets || activeBrief.slideBullets;
       await updateBrief(
         activeBrief.id,
-        { slide_bullets: updatedBrief.previewSlideBullets || activeBrief.slideBullets } as any
+        { slideBullets: updatedBrief.previewSlideBullets || activeBrief.slideBullets }
       );
       updatedBrief.previewSlideBullets = undefined;
     }
@@ -468,11 +468,7 @@ export default function ProjectDashboard() {
     setActiveBriefId(""); // No brief active while in Ask Thrust mode
   };
 
-  // Handle citation chip click: jump to brief, exit ask thrust
-  const handleSelectBriefFromCitation = (briefId: string) => {
-    setAskThrustActive(false);
-    setActiveBriefId(briefId);
-  };
+
 
   return (
     <div className="flex h-[calc(100vh-55px)] bg-background text-foreground my-16 ">

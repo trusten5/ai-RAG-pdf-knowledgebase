@@ -46,7 +46,7 @@ ${summary}`;
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
-            h1: ({ node, ...props }) => (
+            h1: ({ ...props }) => (
               <h1
                 style={{
                   color: "var(--accent)",
@@ -59,7 +59,7 @@ ${summary}`;
                 {...props}
               />
             ),
-            h2: ({ node, ...props }) => (
+            h2: ({ ...props }) => (
               <h2
                 style={{
                   color: "var(--accent)",
@@ -72,13 +72,13 @@ ${summary}`;
                 {...props}
               />
             ),
-            li: ({ node, ...props }) => (
+            li: ({ ...props }) => (
               <li style={{ color: "var(--muted)", fontSize: "1rem", marginBottom: "0.35em" }} {...props} />
             ),
-            strong: ({ node, ...props }) => (
+            strong: ({ ...props }) => (
               <strong style={{ color: "var(--foreground)" }} {...props} />
             ),
-            p: ({ node, ...props }) => (
+            p: ({ ...props }) => (
               <p style={{ color: "var(--foreground)", fontSize: "1rem", marginBottom: "0.35em" }} {...props} />
             ),
           }}

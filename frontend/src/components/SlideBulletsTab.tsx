@@ -65,7 +65,7 @@ export default function SlideBulletsTab({
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                h2: ({ node, ...props }) => (
+                h2: ({ ...props }) => (
                   <h2
                     style={{
                       color: "var(--accent)",
@@ -78,7 +78,7 @@ export default function SlideBulletsTab({
                     {...props}
                   />
                 ),
-                li: ({ node, ...props }) => (
+                li: ({ ...props }) => (
                   <li
                     style={{
                       color: "var(--muted)",
@@ -88,10 +88,10 @@ export default function SlideBulletsTab({
                     {...props}
                   />
                 ),
-                strong: ({ node, ...props }) => (
+                strong: ({ ...props }) => (
                   <strong style={{ color: "var(--foreground)" }} {...props} />
                 ),
-                p: ({ node, ...props }) => (
+                p: ({ ...props }) => (
                   <p
                     style={{
                       color: "var(--foreground)",

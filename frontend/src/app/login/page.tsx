@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -102,9 +103,9 @@ export default function LoginPage() {
           </button>
         </div>
         <div className="text-center mt-4">
-          <a href="/" className="text-muted text-xs hover:underline">
+          <Link href="/" className="text-muted text-xs hover:underline">
             &larr; Back to landing
-          </a>
+          </Link>
         </div>
       </div>
     </div>

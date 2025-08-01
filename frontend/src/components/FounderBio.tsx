@@ -39,7 +39,7 @@ export default function FounderBio() {
         }}
         transition={{ duration: 0.6, delay: 0.2 }}
       >
-        I'm an engineer building Thrust to eliminate the repetitive tasks consultants face daily — rewriting decks, summarizing PDFs, pulling insights from reports.
+        I&apos;m an engineer building Thrust to eliminate the repetitive tasks consultants face daily — rewriting decks, summarizing PDFs, pulling insights from reports.
         <br /><br />
         With experience in AI automation and startup product workflows, I’m focused on delivering tools that cut through noise. No distractions, no hallucinated fluff — just clean, structured output you can actually use.
       </motion.p>

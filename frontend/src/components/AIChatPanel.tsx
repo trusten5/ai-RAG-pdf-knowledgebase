@@ -94,7 +94,7 @@ export default function AIChatPanel({
 
     try {
       let endpoint: string;
-      let payload: any;
+      let payload: Record<string, unknown>;
       if (tabType === "bullets") {
         endpoint = `${apiBase}/api/chat_on_slide_bullets/`;
         payload = {
