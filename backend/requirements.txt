@@ -7,22 +7,18 @@ sqlalchemy==2.0.23
 python-dotenv==1.0.0
 python-multipart==0.0.6
 requests==2.31.0
-pydantic==1.10.13  # Downgraded to avoid pydantic-core (Rust build)
+pydantic==1.10.13
 
 # PDF parsing
 pdfplumber==0.10.3
 pdfminer.six==20221105
-Pillow==9.5.0         # Fixed version with wheel available
-pypdfium2==4.18.0     # Compatible version with wheel available
+Pillow==11.3.0  # Available prebuilt for Python 3.13
+pypdfium2==4.30.0  # Latest version with wheel support
 
 # AI
 openai==1.3.7
-tiktoken==0.5.1       # Last version with prebuilt manylinux wheels
+tiktoken==0.5.1  # Use this version for wheel compatibility (no Rust)
 
 # Supabase (compatible httpx)
 supabase==2.0.2
 httpx==0.24.1
-
-# Optional
-pytest==7.4.3
-pytest-asyncio==0.21.1
