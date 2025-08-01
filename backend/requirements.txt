@@ -1,2 +1,28 @@
-fastapi
-uvicorn 
+# FastAPI & ASGI
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# PDF processing
+pdfplumber==0.10.3
+pdfminer.six==20221105
+Pillow>=9.1
+pypdfium2>=4.18.0
+
+# Core dependencies
+sqlalchemy==2.0.23
+python-dotenv==1.0.0
+pydantic==2.4.2
+python-multipart==0.0.6
+requests==2.31.0
+
+# OpenAI integration
+openai==1.3.7
+tiktoken==0.5.1  # Downgraded to avoid Rust build
+
+# Supabase (compatible httpx version)
+supabase==2.0.2
+httpx==0.24.1
+
+# Testing (optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1 
