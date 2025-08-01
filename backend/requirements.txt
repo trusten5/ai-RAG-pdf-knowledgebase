@@ -24,7 +24,7 @@ supabase==2.0.2
 requests==2.31.0
 
 # Pydantic for data validation
-pydantic==2.5.0
+pydantic==2.4.2
 
 # CORS middleware (included with FastAPI but good to specify)
 python-multipart==0.0.6
