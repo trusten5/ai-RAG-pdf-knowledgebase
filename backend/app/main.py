@@ -15,9 +15,9 @@ def root():
     return {"message": "API running"}
 
 app.include_router(upload.router, prefix="/api")
-app.include_router(summarize.router, prefix="/api")
-app.include_router(chat.router, prefix="/api")
-app.include_router(brief.router, prefix="/api")
+# app.include_router(summarize.router, prefix="/api")
+# app.include_router(chat.router, prefix="/api")
+# app.include_router(brief.router, prefix="/api")
 # app.include_router(slide_bullets.router, prefix="/api")
 # app.include_router(ask_thrust.router, prefix="/api")
 # app.include_router(ask_thrust_global.router, prefix="/api")
