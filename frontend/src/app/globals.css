@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+/* === Color Variables === */
+:root {
+  --background: #0B0D10;
+  --foreground: #F2F4F8;
+  --accent: #4DADF7;
+  --accent-hover: #3586c5;
+  --muted: #94A3B8;
+  --muted-strong: #CBD5E1;
+  --card: rgb(38, 76, 146);
+  --font-sans: 'Urbanist', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --background: #ffffff;
+    --foreground: #0B0D10;
+  }
+}
+
+/* === Base Styles === */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+  font-feature-settings: "kern";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer utilities {
+  .text-accent {
+    color: var(--accent);
+  }
+  .bg-accent {
+    background-color: var(--accent);
+  }
+  .border-accent {
+    border-color: var(--accent);
+  }
+  .hover\:bg-accent-hover:hover {
+    background-color: var(--accent-hover);
+  }
+  .text-muted {
+    color: var(--muted);
+  }
+  .text-muted-strong {
+    color: var(--muted-strong);
+  }
+  .bg-card {
+    background-color: var(--card);
+  }
+  .border-muted {
+    border-color: var(--muted);
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.4s ease-in-out both;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === Markdown Styling === */
+.prose-invert {
+  --tw-prose-body: #e2e8f0;
+  --tw-prose-headings: #ffffff;
+  --tw-prose-bullets: #94A3B8;
+  --tw-prose-lead: #e2e8f0;
+  --tw-prose-links: #4DADF7;
+  --tw-prose-bold: #F2F4F8;
+  color: var(--tw-prose-body);
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+
+.prose ul {
+  padding-left: 1.5em;
+  list-style: disc;
+}
+
+.prose p {
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
+}
+
+.prose h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--tw-prose-headings);
+}
+
+
+.prose li {
+  margin: 0.3em 0;
+  padding-left: 0.2rem;
+}
