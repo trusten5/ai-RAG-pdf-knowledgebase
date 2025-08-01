@@ -224,7 +224,7 @@ Project Knowledgebase:
 Instructions:
 - Only use information present in the project knowledgebase above.
 - If referencing a specific brief, mention its title or section name.
-- If you include citations, format them as [CITATION: Title/Section].
+- If you include citations, format them as [CITATION: Title - Section].
 - Return a professional, concise answer.
 - If you don't know, say so directly.
 """
