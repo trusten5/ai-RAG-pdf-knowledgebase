@@ -1,11 +1,13 @@
 "use client";
 
+
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
+import Link from "next/link";
 
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
@@ -26,6 +28,7 @@ import {
   exportSummaryPDF,
   exportBulletsPDF,
 } from "@/utils/pdfExport";
+import { checkAccess } from "@/utils/checkAccess";
 
 const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -59,6 +62,7 @@ export default function ProjectDashboard() {
     : params.projectId;
 
   const [user, setUser] = useState<User | null>(null);
+  const [authorized, setAuthorized] = useState<boolean | null>(null); // null = loading
   const [briefs, setBriefs] = useState<Brief[]>([]);
   const [activeBriefId, setActiveBriefId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
@@ -81,16 +85,27 @@ export default function ProjectDashboard() {
   useEffect(() => {
     if (!projectId) return;
     setIsLoading(true);
+  
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         window.location.href = "/login";
-      } else {
-        setUser(user);
-        await fetchBriefs(user.id, projectId);
-        setIsLoading(false);
+        return;
       }
+  
+      const hasAccess = await checkAccess(user.id);
+      if (!hasAccess) {
+        setAuthorized(false);
+        return;
+      }
+  
+      setAuthorized(true);
+      setUser(user);
+      await fetchBriefs(user.id, projectId);
+      setIsLoading(false);
     });
   }, [projectId]);
+  
+  
 
   async function fetchBriefs(userId: string, projectId: string) {
     const { data, error } = await supabase
@@ -468,8 +483,26 @@ export default function ProjectDashboard() {
     setActiveBriefId(""); // No brief active while in Ask Thrust mode
   };
 
+  if (authorized === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground text-center px-4">
+        <div>
+          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+          <p className="text-muted">Your account does not have access to this page. Contact support or use a valid access code.</p>
+          <Link href="/login" className="inline-block mt-6 text-accent hover:underline">Return to Login</Link>
+        </div>
+      </div>
+    );
+  }
 
-
+  if (authorized === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted bg-background">
+        Verifying access...
+      </div>
+    );
+  }
+  
   return (
     <div className="flex h-[calc(100vh-55px)] bg-background text-foreground my-16 ">
       <Sidebar

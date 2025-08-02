@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import AskThrustPanel from "@/components/AskThrustPanel";
+import { checkAccess } from "@/utils/checkAccess";
 
 interface Project {
   id: string;
@@ -19,7 +20,7 @@ interface Project {
 export default function ManagerPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [loadingAuth, setLoadingAuth] = useState(true);
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -32,11 +33,19 @@ export default function ManagerPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.replace("/login");
-      } else {
-        setUser(user);
-        await fetchProjects(user.id);
+        return;
       }
-      setLoadingAuth(false);
+
+      const hasAccess = await checkAccess(user.id);
+
+      if (!hasAccess) {
+        setAuthorized(false);
+        return;
+      }
+
+      setUser(user);
+      setAuthorized(true);
+      await fetchProjects(user.id);
     });
     // eslint-disable-next-line
   }, []);
@@ -89,10 +98,22 @@ export default function ManagerPage() {
     setCreating(false);
   }
 
-  if (loadingAuth) {
+  if (authorized === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground text-center px-4">
+        <div>
+          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+          <p className="text-muted">Your account does not have access to this page. Contact support or use a valid access code.</p>
+          <Link href="/login" className="inline-block mt-6 text-accent hover:underline">Return to Login</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (authorized === null) {
     return (
       <div className="min-h-screen flex items-center justify-center text-muted bg-background">
-        Checking authentication...
+        Verifying access...
       </div>
     );
   }

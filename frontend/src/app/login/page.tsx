@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accessCode, setAccessCode] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -20,18 +21,44 @@ export default function LoginPage() {
 
     try {
       let result;
+
       if (isSignUp) {
+        if (!accessCode.trim()) {
+          setErrorMsg("Access code is required for sign up.");
+          setLoading(false);
+          return;
+        }
+
         result = await supabase.auth.signUp({ email, password });
+
+        if (result.error) {
+          setErrorMsg(result.error.message);
+        } else if (result.data?.user) {
+          const userId = result.data.user.id;
+
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .update({
+              access_code: accessCode.trim(),
+              membership_tier: "pilot",
+            })
+            .eq("id", userId);
+
+          if (profileError) {
+            setErrorMsg("Signup succeeded, but access assignment failed.");
+            console.error("Profile update error:", profileError);
+          } else {
+            setErrorMsg("Sign up successful! Please check your email to verify your account.");
+          }
+        }
       } else {
         result = await supabase.auth.signInWithPassword({ email, password });
-      }
 
-      if (result.error) {
-        setErrorMsg(result.error.message);
-      } else if (!isSignUp) {
-        router.push("/manager");
-      } else {
-        setErrorMsg("Sign up successful! Please check your email to verify your account.");
+        if (result.error) {
+          setErrorMsg(result.error.message);
+        } else {
+          router.push("/manager");
+        }
       }
     } catch {
       setErrorMsg("An unexpected error occurred.");
@@ -75,6 +102,21 @@ export default function LoginPage() {
               className="w-full px-3 py-2 rounded-lg bg-background border border-muted text-foreground focus:outline-none focus:border-accent transition"
             />
           </div>
+          {isSignUp && (
+            <div>
+              <label htmlFor="accessCode" className="block text-muted-strong mb-1 text-sm font-medium">
+                Access Code
+              </label>
+              <input
+                type="text"
+                required
+                id="accessCode"
+                value={accessCode}
+                onChange={e => setAccessCode(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-background border border-muted text-foreground focus:outline-none focus:border-accent transition"
+              />
+            </div>
+          )}
           {errorMsg && (
             <div className="bg-red-500/10 border border-red-500 text-red-600 rounded p-2 text-sm text-center">
               {errorMsg}
@@ -97,9 +139,7 @@ export default function LoginPage() {
               setErrorMsg(null);
             }}
           >
-            {isSignUp
-              ? "Already have an account? Sign In"
-              : "Don't have an account? Sign Up"}
+            {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
           </button>
         </div>
         <div className="text-center mt-4">

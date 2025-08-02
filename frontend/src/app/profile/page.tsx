@@ -5,15 +5,42 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
+interface UserProfile {
+  membership_tier: string | null;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) router.push("/login");
-      else setUser(user);
-    });
+    const fetchUserAndProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      setUser(user);
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("membership_tier")
+        .eq("id", user.id)
+        .single();
+
+      if (!error) {
+        setProfile(data);
+      } else {
+        console.error("Error fetching profile:", error.message);
+      }
+    };
+
+    fetchUserAndProfile();
   }, [router]);
 
   const handleSignOut = async () => {
@@ -33,8 +60,14 @@ export default function ProfilePage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="max-w-md w-full bg-card rounded-2xl shadow-xl p-10 text-foreground">
         <h1 className="text-2xl font-bold mb-4 text-center">Your Profile</h1>
-        <p className="text-sm text-muted mb-8 text-center">
+        <p className="text-sm text-muted mb-2 text-center">
           Logged in as <span className="font-medium">{user.email}</span>
+        </p>
+        <p className="text-sm text-muted mb-8 text-center">
+          Access Level:{" "}
+          <span className="font-medium">
+            {profile?.membership_tier || "Unassigned"}
+          </span>
         </p>
         <button
           onClick={handleSignOut}
