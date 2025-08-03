@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import posthog from "@/app/instrumentation-client";
 import type { User } from "@supabase/supabase-js";
 
 interface UserProfile {
@@ -15,6 +16,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
+    posthog.capture("profile_page_view");
+
     const fetchUserAndProfile = async () => {
       const {
         data: { user },
@@ -35,8 +38,6 @@ export default function ProfilePage() {
 
       if (!error) {
         setProfile(data);
-      } else {
-        console.error("Error fetching profile:", error.message);
       }
     };
 
@@ -44,6 +45,7 @@ export default function ProfilePage() {
   }, [router]);
 
   const handleSignOut = async () => {
+    posthog.capture("sign_out", { user_id: user?.id, email: user?.email });
     await supabase.auth.signOut();
     router.push("/login");
   };

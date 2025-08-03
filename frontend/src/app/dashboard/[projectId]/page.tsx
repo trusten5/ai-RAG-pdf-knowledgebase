@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -19,6 +18,9 @@ import Tabs from "@/components/Tabs";
 import SummaryTab from "@/components/SummaryTab";
 import SlideBulletsTab from "@/components/SlideBulletsTab";
 import AskThrustPanel, { AskThrustPanelHandle } from "@/components/AskThrustPanel";
+import FeedbackButtons from "@/components/FeedbackButton";
+
+import posthog from "@/app/instrumentation-client";
 
 import {
   replaceSection,
@@ -31,6 +33,7 @@ import {
 import { checkAccess } from "@/utils/checkAccess";
 
 const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 
 interface Brief {
   id: string;
@@ -70,42 +73,49 @@ export default function ProjectDashboard() {
   const [exporting, setExporting] = useState(false);
   const [accepting, setAccepting] = useState(false);
 
-
   const [activeTab, setActiveTab] = useState<"summary" | "bullets">("summary");
   const [bulletsPrompt, setBulletsPrompt] = useState("");
   const [bulletsLoading, setBulletsLoading] = useState(false);
   const [bulletsCopied, setBulletsCopied] = useState(false);
   const [bulletsExporting, setBulletsExporting] = useState(false);
 
-  // Ask Thrust project-wide chat state
   const [askThrustActive, setAskThrustActive] = useState(false);
-  // AskThrustPanel refresh ref
   const askThrustPanelRef = useRef<AskThrustPanelHandle>(null);
+
+  // PostHog: Identify user on load
+  useEffect(() => {
+    if (user) {
+      posthog.identify(user.id, { email: user.email });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!projectId) return;
     setIsLoading(true);
-  
+
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         window.location.href = "/login";
         return;
       }
-  
+
       const hasAccess = await checkAccess(user.id);
       if (!hasAccess) {
         setAuthorized(false);
         return;
       }
-  
+
       setAuthorized(true);
       setUser(user);
       await fetchBriefs(user.id, projectId);
       setIsLoading(false);
+      // PostHog: Page view
+      posthog.capture("dashboard_viewed", {
+        user_id: user.id,
+        project_id: projectId,
+      });
     });
   }, [projectId]);
-  
-  
 
   async function fetchBriefs(userId: string, projectId: string) {
     const { data, error } = await supabase
@@ -133,7 +143,6 @@ export default function ProjectDashboard() {
     setActiveBriefId((data && data[0]?.id) || "");
   }
 
-  // Refresh Ask Thrust if active
   const refreshAskThrustIfActive = () => {
     if (askThrustActive) askThrustPanelRef.current?.refresh();
   };
@@ -141,11 +150,13 @@ export default function ProjectDashboard() {
   const createNewBrief = async () => {
     if (!projectId || !user) return;
 
+    const newBriefId = uuidv4();
+
     const { data, error } = await supabase
       .from("briefs")
       .insert([
         {
-          id: uuidv4(),
+          id: newBriefId,
           project_id: projectId,
           user_id: user.id,
           title: "New Brief",
@@ -158,8 +169,16 @@ export default function ProjectDashboard() {
 
     if (error) {
       alert("Error creating brief: " + error.message);
+      return;
     }
+
     if (data) {
+      posthog.capture("brief_created", {
+        user_id: user.id,
+        project_id: projectId,
+        brief_id: newBriefId,
+      });
+
       setBriefs((prev) => [
         {
           ...data,
@@ -177,6 +196,12 @@ export default function ProjectDashboard() {
   };
 
   const deleteBrief = async (id: string) => {
+    posthog.capture("brief_deleted", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: id,
+    });
+
     await supabase.from("briefs").delete().eq("id", id);
     setBriefs((prev) => prev.filter((b) => b.id !== id));
     if (id === activeBriefId) setActiveBriefId(briefs[0]?.id || "");
@@ -192,7 +217,7 @@ export default function ProjectDashboard() {
       .select()
       .single();
     if (error && Object.keys(error).length > 0) {
-      console.error("[Dashboard] Supabase error updating brief:", error);
+      console.error("[Dashboard] Supabase error updating brief:", error.message || error);
     }
     if (data) {
       setBriefs((prev) =>
@@ -246,11 +271,24 @@ export default function ProjectDashboard() {
         return b;
       })
     );
+    posthog.capture("brief_edit_proposed", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBriefId,
+      edit_type: edit?.type,
+    });
   };
 
   const handleAcceptEdit = async () => {
     if (!activeBrief || !activeBrief.pendingEdit) return;
     setAccepting(true);
+
+    posthog.capture("brief_edit_accepted", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBrief.id,
+      edit_type: activeBrief.pendingEdit.type,
+    });
 
     const updatedBrief: Brief = { ...activeBrief, pendingEdit: null };
 
@@ -279,6 +317,11 @@ export default function ProjectDashboard() {
   };
 
   const handleUndoEdit = () => {
+    posthog.capture("brief_edit_undo", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBriefId,
+    });
     setBriefs((prev) =>
       prev.map((b) =>
         b.id === activeBriefId
@@ -315,6 +358,11 @@ export default function ProjectDashboard() {
       )
     );
     setActiveTab("summary");
+    posthog.capture("summary_generation_started", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBriefId,
+    });
   };
 
   const handleSummaryResult = (
@@ -341,6 +389,11 @@ export default function ProjectDashboard() {
         summary: summaryVal,
         executive_summary: execSummaryVal,
       });
+      posthog.capture("summary_generated", {
+        user_id: user?.id,
+        project_id: projectId,
+        brief_id: activeBriefId,
+      });
     }
     setIsLoading(false);
     refreshAskThrustIfActive();
@@ -351,6 +404,11 @@ export default function ProjectDashboard() {
     setBulletsPrompt("");
     setBulletsCopied(false);
     setBulletsExporting(false);
+    posthog.capture("slide_bullets_tab_opened", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBriefId,
+    });
   };
 
   const submitBulletsPrompt = async () => {
@@ -358,6 +416,14 @@ export default function ProjectDashboard() {
     setBulletsLoading(true);
     setBulletsCopied(false);
     setBulletsExporting(false);
+
+    posthog.capture("slide_bullets_generation_requested", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBrief?.id,
+      prompt: bulletsPrompt,
+    });
+
     try {
       const { data } = await axios.post(`${apiBase}/api/generate_slide_bullets/`, {
         brief_id: activeBrief.id,
@@ -370,6 +436,11 @@ export default function ProjectDashboard() {
         )
       );
       await updateBrief(activeBrief.id, { slideBullets: data.bullets_markdown });
+      posthog.capture("slide_bullets_generated", {
+        user_id: user?.id,
+        project_id: projectId,
+        brief_id: activeBrief?.id,
+      });
     } catch {
       setBriefs((prev) =>
         prev.map((b) =>
@@ -378,6 +449,11 @@ export default function ProjectDashboard() {
             : b
         )
       );
+      posthog.capture("slide_bullets_generation_failed", {
+        user_id: user?.id,
+        project_id: projectId,
+        brief_id: activeBrief?.id,
+      });
     } finally {
       setBulletsLoading(false);
       refreshAskThrustIfActive();
@@ -394,10 +470,18 @@ export default function ProjectDashboard() {
           : b
       )
     );
+    posthog.capture("ai_chat_message_sent", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBriefId,
+      tab: activeTab,
+      role: msg.role,
+    });
   };
 
   const handleCopySummary = () => {
     if (!activeBrief) return;
+    // ... existing copy logic ...
     const lines: string[] = [];
 
     if (activeBrief.executive_summary) {
@@ -427,11 +511,18 @@ export default function ProjectDashboard() {
     navigator.clipboard.writeText(lines.join("\n").trim());
     setCopied(true);
     setTimeout(() => setCopied(false), 1300);
+
+    posthog.capture("summary_copied", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBrief.id,
+    });
   };
 
   const handleCopyBullets = () => {
     if (!activeBrief?.slideBullets) return;
 
+    // ... existing copy logic ...
     const lines: string[] = [];
     lines.push("Slide Bullets");
     lines.push("");
@@ -452,6 +543,12 @@ export default function ProjectDashboard() {
     navigator.clipboard.writeText(lines.join("\n").trim());
     setBulletsCopied(true);
     setTimeout(() => setBulletsCopied(false), 1300);
+
+    posthog.capture("slide_bullets_copied", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBrief.id,
+    });
   };
 
   const handleExportPDF = () => {
@@ -459,6 +556,12 @@ export default function ProjectDashboard() {
     setExporting(true);
     setTimeout(() => setExporting(false), 1200);
     exportSummaryPDF(activeBrief.summary, activeBrief.executive_summary);
+
+    posthog.capture("summary_exported_pdf", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBrief.id,
+    });
   };
 
   const handleExportBullets = () => {
@@ -466,21 +569,47 @@ export default function ProjectDashboard() {
     setBulletsExporting(true);
     setTimeout(() => setBulletsExporting(false), 1200);
     exportBulletsPDF(activeBrief.slideBullets);
+
+    posthog.capture("slide_bullets_exported_pdf", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBrief.id,
+    });
   };
 
-  // Always prefer preview if present
   const getSummaryToDisplay = (brief: Brief) => brief.previewSummary || brief.summary;
   const getExecutiveToDisplay = (brief: Brief) => brief.previewExecutiveSummary || brief.executive_summary;
   const getBulletsToDisplay = (brief: Brief) => brief.previewSlideBullets || brief.slideBullets;
 
-  // Sidebar handlers for Ask Thrust integration
   const handleSidebarSelectChat = (id: string) => {
     setAskThrustActive(false);
     setActiveBriefId(id);
+
+    posthog.capture("brief_selected", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: id,
+    });
   };
   const handleSidebarAskThrust = () => {
     setAskThrustActive(true);
     setActiveBriefId(""); // No brief active while in Ask Thrust mode
+
+    posthog.capture("ask_thrust_opened", {
+      user_id: user?.id,
+      project_id: projectId,
+    });
+  };
+
+  // Tabs: track tab switches
+  const handleTabChange = (key: string) => {
+    setActiveTab(key as "summary" | "bullets");
+    posthog.capture("tab_switched", {
+      user_id: user?.id,
+      project_id: projectId,
+      brief_id: activeBriefId,
+      tab: key,
+    });
   };
 
   if (authorized === false) {
@@ -502,7 +631,7 @@ export default function ProjectDashboard() {
       </div>
     );
   }
-  
+
   return (
     <div className="flex h-[calc(100vh-55px)] bg-background text-foreground my-16 ">
       <Sidebar
@@ -545,39 +674,57 @@ export default function ProjectDashboard() {
                   </div>
                   <Tabs
                     activeTab={activeTab}
-                    onTabChange={(key) => setActiveTab(key as "summary" | "bullets")}
+                    onTabChange={handleTabChange}
                     tabs={[
                       { key: "summary", label: "Summary" },
                       { key: "bullets", label: "Slide Bullets", disabled: !activeBrief.slideBullets },
                     ]}
                   />
 
-                  {activeTab === "summary" && (
-                    <SummaryTab
-                      summary={getSummaryToDisplay(activeBrief)}
-                      executiveSummary={getExecutiveToDisplay(activeBrief)}
-                      onExport={handleExportPDF}
-                      onCopy={handleCopySummary}
-                      copied={copied}
-                      exporting={exporting}
-                      onGenerateBullets={handleGenerateBullets}
-                      generatingBullets={bulletsLoading}
-                    />
-                  )}
+                    {activeTab === "summary" && (
+                      <>
+                        <SummaryTab
+                          summary={getSummaryToDisplay(activeBrief)}
+                          executiveSummary={getExecutiveToDisplay(activeBrief)}
+                          onExport={handleExportPDF}
+                          onCopy={handleCopySummary}
+                          copied={copied}
+                          exporting={exporting}
+                          onGenerateBullets={handleGenerateBullets}
+                          generatingBullets={bulletsLoading}
+                        />
+                        {(!!getSummaryToDisplay(activeBrief) || !!getExecutiveToDisplay(activeBrief)) && user?.id && activeBrief.id && (
+                          <FeedbackButtons
+                            userId={user.id}
+                            briefId={activeBrief.id}
+                            sectionType="summary"
+                          />
+                        )}
+                      </>
+                    )}
 
-                  {activeTab === "bullets" && (
-                    <SlideBulletsTab
-                      prompt={bulletsPrompt}
-                      onPromptChange={setBulletsPrompt}
-                      onSubmitPrompt={submitBulletsPrompt}
-                      loading={bulletsLoading}
-                      bullets={getBulletsToDisplay(activeBrief)}
-                      copied={bulletsCopied}
-                      exporting={bulletsExporting}
-                      onCopy={handleCopyBullets}
-                      onExport={handleExportBullets}
-                    />
-                  )}
+                    {activeTab === "bullets" && (
+                      <>
+                        <SlideBulletsTab
+                          prompt={bulletsPrompt}
+                          onPromptChange={setBulletsPrompt}
+                          onSubmitPrompt={submitBulletsPrompt}
+                          loading={bulletsLoading}
+                          bullets={getBulletsToDisplay(activeBrief)}
+                          copied={bulletsCopied}
+                          exporting={bulletsExporting}
+                          onCopy={handleCopyBullets}
+                          onExport={handleExportBullets}
+                        />
+                        {!!getBulletsToDisplay(activeBrief) && user?.id && activeBrief.id && (
+                          <FeedbackButtons
+                            userId={user.id}
+                            briefId={activeBrief.id}
+                            sectionType="bullets"
+                          />
+                        )}
+                      </>
+                    )}
                 </div>
                 <div className="w-[320px] bg-[#192236] px-4 py-7 flex flex-col border-l border-muted rounded-r-2xl shadow-lg">
                   <AIChatPanel

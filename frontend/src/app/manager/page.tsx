@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import posthog from "@/app/instrumentation-client";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import AskThrustPanel from "@/components/AskThrustPanel";
@@ -30,6 +31,7 @@ export default function ManagerPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    posthog.capture("manager_page_view");
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.replace("/login");
@@ -61,9 +63,11 @@ export default function ManagerPage() {
     if (error) {
       setError("Failed to load projects.");
       setProjects([]);
+      posthog.capture("project_fetch_failed", { user_id: userId, error: error.message });
     } else {
       setProjects(data || []);
       setError(null);
+      posthog.capture("project_fetch_success", { user_id: userId, count: data?.length || 0 });
     }
     setLoading(false);
   }
@@ -73,6 +77,8 @@ export default function ManagerPage() {
     if (!newTitle.trim() || !user) return;
     setCreating(true);
     setError(null);
+
+    posthog.capture("project_create_attempt", { user_id: user.id, title: newTitle.trim() });
 
     const { data, error } = await supabase
       .from("projects")
@@ -88,11 +94,13 @@ export default function ManagerPage() {
 
     if (error || !data) {
       setError("Failed to create project.");
+      posthog.capture("project_create_failed", { user_id: user.id, title: newTitle.trim(), error: error?.message });
     } else {
       setProjects((prev) => [data, ...prev]);
       setShowModal(false);
       setNewTitle("");
       setNewDesc("");
+      posthog.capture("project_create_success", { user_id: user.id, project_id: data.id });
       router.push(`/dashboard/${data.id}`);
     }
     setCreating(false);
@@ -130,7 +138,10 @@ export default function ManagerPage() {
           </div>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setShowModal(true);
+            posthog.capture("modal_open_new_project", { user_id: user?.id });
+          }}
           className="px-6 py-2 rounded-xl bg-accent text-background font-semibold hover:bg-accent-hover shadow transition"
         >
           + New Project
@@ -158,6 +169,7 @@ export default function ManagerPage() {
               key={proj.id}
               href={`/dashboard/${proj.id}`}
               className="block bg-card border border-muted rounded-2xl p-6 shadow-lg hover:border-accent group transition"
+              onClick={() => posthog.capture("project_open", { user_id: user?.id, project_id: proj.id })}
             >
               <div className="text-xl font-semibold text-foreground group-hover:text-accent transition">
                 {proj.title}
@@ -220,7 +232,10 @@ export default function ManagerPage() {
               <button
                 type="button"
                 className="px-5 py-2 rounded-lg border border-muted text-muted hover:text-foreground transition"
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  posthog.capture("modal_close_new_project", { user_id: user?.id });
+                }}
                 disabled={creating}
               >
                 Cancel

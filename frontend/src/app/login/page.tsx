@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import posthog from "@/app/instrumentation-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,10 +15,16 @@ export default function LoginPage() {
   const [accessCode, setAccessCode] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  useEffect(() => {
+    posthog.capture("login_page_view");
+  }, []);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setLoading(true);
+
+    posthog.capture(isSignUp ? "signup_attempt" : "login_attempt", { email });
 
     try {
       let result;
@@ -33,8 +40,11 @@ export default function LoginPage() {
 
         if (result.error) {
           setErrorMsg(result.error.message);
+          posthog.capture("signup_failed", { email, error: result.error.message });
         } else if (result.data?.user) {
           const userId = result.data.user.id;
+          posthog.capture("signup_success", { email, user_id: userId });
+          posthog.identify(userId, { email });
 
           const { error: profileError } = await supabase
             .from("profiles")
@@ -46,7 +56,6 @@ export default function LoginPage() {
 
           if (profileError) {
             setErrorMsg("Signup succeeded, but access assignment failed.");
-            console.error("Profile update error:", profileError);
           } else {
             setErrorMsg("Sign up successful! Please check your email to verify your account.");
           }
@@ -56,12 +65,16 @@ export default function LoginPage() {
 
         if (result.error) {
           setErrorMsg(result.error.message);
+          posthog.capture("login_failed", { email, error: result.error.message });
         } else {
+          posthog.capture("login_success", { email, user_id: result.data.user.id });
+          posthog.identify(result.data.user.id, { email });
           router.push("/manager");
         }
       }
     } catch {
       setErrorMsg("An unexpected error occurred.");
+      posthog.capture("auth_unexpected_error", { email });
     } finally {
       setLoading(false);
     }
@@ -137,6 +150,7 @@ export default function LoginPage() {
             onClick={() => {
               setIsSignUp(!isSignUp);
               setErrorMsg(null);
+              posthog.capture(isSignUp ? "goto_login" : "goto_signup");
             }}
           >
             {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}

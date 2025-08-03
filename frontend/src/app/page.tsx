@@ -1,8 +1,16 @@
+"use client";
+
+import { useEffect } from "react";
 import LandingHero from "@/components/LandingHero";
 import FeatureGrid from "@/components/FeatureGrid";
 import MeetCTA from "@/components/MeetCTA";
+import posthog from "@/app/instrumentation-client";
 
 export default function Home() {
+  useEffect(() => {
+    posthog.capture("landing_page_view");
+  }, []);
+
   return (
     <div className="bg-background">
       <LandingHero />
