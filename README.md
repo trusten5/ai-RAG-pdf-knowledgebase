@@ -1,117 +1,181 @@
-# Thrust MVP
+<p align="center">
+  <a href="https://thrust-mvp-git-main-trusten5s-projects.vercel.app" target="_blank">
+    <img src="https://img.shields.io/badge/Launch-Demo-blue?style=for-the-badge&logo=vercel" alt="Launch Demo" />
+  </a>
+</p>
 
-A full-stack application for AI-powered document analysis and presentation generation.
 
-## Project Structure
+# AI-Powered Document Knowledge Assistant
+
+An open-source, full-stack **RAG (Retrieval-Augmented Generation)** platform that transforms PDFs into executive summaries, markdown-style notes, and slide bullets — powered by LLMs and vector search.
+
+Built with:
+- **Next.js + Tailwind CSS** frontend
+- **FastAPI** backend
+- **Supabase** for auth/storage
+- **OpenAI + pgvector** for embeddings and semantic search
+
+---
+
+## ✨ Features
+
+- 📄 **Upload & Parse PDFs**: Automatic chunking and embedding of documents
+- 🔍 **Semantic Memory (RAG)**: Query documents via vector search and LLM augmentation
+- 🧠 **LLM Summarization**: Extract executive summaries, markdown sections, and presentation-ready bullets
+- 💬 **Chat Interface**: Interact with documents using a project-level assistant
+- 🏷️ **Feedback Workflow**: Tag vague/inaccurate responses and log feedback via PostHog
+- 🧱 **Modular Stack**: Easily extend with more models, storage, or evaluation layers
+- 🚀 **Production-Ready Deployment**: Designed for Vercel, Railway, Supabase
+
+---
+
+## 📁 Project Structure
 
 ```
+
 thrust-mvp/
-├── backend/          # FastAPI backend server
-│   ├── app/         # Main application code
-│   ├── requirements.txt
-│   └── README.md
-├── frontend/        # Next.js frontend application
-│   ├── src/         # Source code
-│   ├── public/      # Static assets
-│   ├── package.json
-│   └── README.md
-└── README.md        # This file
+├── backend/          # FastAPI backend (Python)
+│   └── app/          # API routes, LLM logic, embeddings
+├── frontend/         # Next.js frontend (TypeScript + Tailwind)
+│   └── src/          # UI, chat logic, uploads, dashboards
+└── README.md         # You're here
+
 ```
 
-## Features
+---
 
-- **Document Upload & Analysis**: Upload PDF documents for AI-powered analysis
-- **AI Chat Interface**: Interactive chat with uploaded documents
-- **Presentation Generation**: Automatically generate slide bullets and summaries
-- **Modern UI**: Built with Next.js, TypeScript, and Tailwind CSS
-- **FastAPI Backend**: Python-based API with Supabase integration
+## 🧪 Live Demo
 
-## Environment Variables
+Try the live demo here:  
+👉 [https://thrust-mvp-git-main-trusten5s-projects.vercel.app/](https://thrust-mvp-git-main-trusten5s-projects.vercel.app/)
 
-The following environment variables need to be configured:
+> Note: This is a demo instance, [contact](mailto:tlehmannkarp@g.hmc.edu) me for access code and commercial use.
 
-### Backend (.env)
-```
+
+---
+
+## 🔧 Tech Stack
+
+| Layer       | Tool                     |
+|-------------|--------------------------|
+| Frontend    | Next.js, Tailwind CSS    |
+| Backend     | FastAPI, OpenAI API      |
+| Database    | Supabase, PostgreSQL     |
+| Embeddings  | OpenAI `text-embedding-3-large` + pgvector |
+| Hosting     | Vercel (frontend), Railway (backend) |
+| Analytics   | PostHog (user feedback tracking) |
+
+---
+
+## ⚙️ Environment Variables
+
+### Backend (`.env`)
+```env
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL_NAME=your_preferred_openai_model
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_KEY=your_supabase_service_key
-```
+````
 
-### Frontend (.env.local)
-```
+### Frontend (`.env.local`)
+
+```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-## Getting Started
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- Python (v3.8 or higher)
-- Supabase account
+
+* Node.js (v18+)
+* Python (v3.8+)
+* Supabase account
 
 ### Backend Setup
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
 
-2. Create a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Create a `.env` file with your Supabase credentials
-
-5. Run the development server:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate         # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
 
 ### Frontend Setup
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-3. Create a `.env.local` file with your environment variables
+---
 
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
+## 🛠 Development
 
-## Development
+* Backend: `http://localhost:8000`
+* Frontend: `http://localhost:3000`
+* FastAPI Docs: `http://localhost:8000/docs`
 
-- Backend runs on `http://localhost:8000`
-- Frontend runs on `http://localhost:3000`
-- API documentation available at `http://localhost:8000/docs`
+---
 
-## Deployment
+## 🧩 Deployment
 
-The application is designed to be deployed with:
-- Backend: Any Python hosting service (Railway, Heroku, etc.)
-- Frontend: Vercel, Netlify, or similar
-- Database: Supabase
+* **Frontend** → [Vercel](https://vercel.com/)
+* **Backend** → [Railway](https://railway.app/)
+* **Database** → [Supabase](https://supabase.com/)
 
-## Contributing
+---
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+## 💼 Use Cases
 
-## License
+* Consulting teams analyzing reports (e.g., 10-Ks, diligence docs)
+* Small firms creating internal document knowledge bases
+* Students, analysts, or researchers summarizing lengthy PDFs
 
-This project is proprietary software. 
+---
+
+## 📦 Customization Ideas
+
+* Swap OpenAI for Claude, Gemini, or Mistral
+* Extend prompt flows for document classification or extraction
+* Add document filters, search UX, or history view
+* Integrate LangChain or LlamaIndex backends
+
+---
+
+## 🧠 Learn More About RAG
+
+This project uses **Retrieval-Augmented Generation (RAG)**:
+
+* Chunks documents
+* Embeds and stores vectors in pgvector
+* Retrieves relevant content via similarity search
+* Injects it into LLM prompts for grounded responses
+
+---
+
+## 📄 License
+
+**Business Source License (BUSL-1.1)** — free for personal and evaluation use.
+For commercial use, please [contact](mailto:tlehmannkarp@g.hmc.edu) or open an issue.
+
+> Want help deploying or white-labeling this for your team? Reach out.
+
+---
+
+## 🙏 Acknowledgments
+
+Built with tools from:
+
+* OpenAI
+* Supabase
+* pgvector
+* Vercel / Railway
+* FastAPI
+
+```
